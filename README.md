@@ -1,1 +1,2 @@
-# Bring-your-own-data-Lab_LLMs
+# LLMs für die Geisteswissenschaften
+## Vom General-Purpose-Modell zum Spezialwerkzeug im Bring-Your-Own-Data-Lab
