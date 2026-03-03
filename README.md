@@ -42,11 +42,11 @@ In dem Workshop geht es um spezialisierte Large Language Models und spezialisier
 
 **Tag 2**
 
-09:20 Willkommen
+09:30 Willkommen
 
-09:30 Impuls 1: Prompting für die Geisteswissenschaften | Lauren Coetzee
+09:45 Impuls 1: Prompting für die Geisteswissenschaften | Lauren Coetzee
 
-10:15 Kaffeepause
+10:45 Kaffeepause
 
 11:00 Hands-On: Prompts an geisteswissenschaftliche Forschungsfrage anpassen | Lauren Coetzee
 
@@ -56,7 +56,11 @@ In dem Workshop geht es um spezialisierte Large Language Models und spezialisier
 
 13:30 Hands-on: (Eigene) Daten für Fine-Tuning aufarbeiten | Sarah Oberbichler
 
+14:45 Kaffeepause
+
 15:00 Diskussion und Mentoring | Sarah Oberbichler/Lauren Coetzee/Johanna Mauermann
 
-16.00 Schlusswort
+15:45 Schlusswort
+ 
+
 
