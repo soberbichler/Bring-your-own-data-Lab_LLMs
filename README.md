@@ -44,11 +44,11 @@ In dem Workshop geht es um spezialisierte Large Language Models und spezialisier
 
 09:30 Willkommen
 
-09:45 Impuls 1: Prompting für die Geisteswissenschaften | Lauren Coetzee
+09:45 Impuls 1: Prompting und Benchmarking für die Geisteswissenschaften | Lauren Coetzee
 
 10:45 Kaffeepause
 
-11:00 Hands-on: Prompts an geisteswissenschaftliche Forschungsfrage anpassen | Lauren Coetzee
+11:00 Hands-On: Prompts an geisteswissenschaftliche Forschungsfrage anpassen und Benchmarking Strategien überlegen | Lauren Coetzee
 
 12:00 Mittagspause 
 
