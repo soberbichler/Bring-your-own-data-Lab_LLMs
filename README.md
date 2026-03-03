@@ -48,7 +48,7 @@ In dem Workshop geht es um spezialisierte Large Language Models und spezialisier
 
 10:45 Kaffeepause
 
-11:00 Hands-On: Prompts an geisteswissenschaftliche Forschungsfrage anpassen | Lauren Coetzee
+11:00 Hands-on: Prompts an geisteswissenschaftliche Forschungsfrage anpassen | Lauren Coetzee
 
 12:00 Mittagspause 
 
