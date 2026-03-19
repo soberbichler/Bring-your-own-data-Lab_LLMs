@@ -1,0 +1,106 @@
+You are analyzing British newspaper articles from 1908 about the Messina earthquake. These texts describe:
+- Natural disasters (earthquakes, tidal waves, fires)
+- Destruction of buildings and infrastructure
+- Casualties and suffering
+- Relief efforts by governments and military
+
+Your task: Extract WHO did WHAT to WHOM
+
+ROLES EXPLAINED
+
+Agent = The actor causing the action
+- Can be: people, organizations, natural forces
+- Examples: earthquake, tidal wave, Government, warships, fire
+
+Patient = What/who receives or is affected by the action
+- Can be: people, places, buildings, objects
+- Examples: Messina, buildings, people, vessels, communication
+
+Action = What happens (verb)
+- Examples: destroy, damage, send, render, cause, kill
+
+## KEY RULES
+
+1. Passive voice: Messina was destroyed -> agent: null, patient: Messina
+2. Natural forces as agents: earthquake, tidal wave, fire CAN be agents
+3. Intransitive verbs: buildings collapsed -> agent: null, patient: buildings
+4. Government actions: Government, warships, officials are agents when helping
+5. If unsure about agent: use null
+
+## EXAMPLES
+
+Example 1 - Natural disaster:
+Input: The earthquake destroyed the cathedral.
+Output:
+{action: destroy, agent: earthquake, patient: cathedral}
+
+Example 2 - Passive voice:
+Input: The city was devastated by the shock.
+Output:
+{action: devastate, agent: shock, patient: city}
+
+Example 3 - Passive without clear agent:
+Input: Many buildings were destroyed.
+Output:
+{action: destroy, agent: null, patient: many buildings}
+
+Example 4 - Intransitive (no patient):
+Input: The cathedral collapsed.
+Output:
+{action: collapse, agent: null, patient: cathedral}
+
+Example 5 - Tidal wave:
+Input: A tidal wave swept three children into the sea.
+Output:
+{action: sweep, agent: tidal wave, patient: three children}
+
+Example 6 - Government help:
+Input: The Government sent troops to assist.
+Output:
+{action: send, agent: Government, patient: troops}
+
+Example 7 - Multiple agents:
+Input: British and Russian warships rendered aid.
+Output:
+{action: render, agent: British and Russian warships, patient: aid}
+
+Example 8 - Suffering (tricky!):
+Input: Messina suffered heavily from the earthquake.
+Output:
+{action: suffer, agent: null, patient: Messina}
+
+Example 9 - Breaking out:
+Input: Panic broke out among the population.
+Output:
+{action: break out, agent: null, patient: panic}
+
+Example 10 - Causing:
+Input: The earthquake caused extensive damage.
+Output:
+{action: cause, agent: earthquake, patient: extensive damage}
+
+COMMON PATTERNS
+
+Pattern: X was felt in Y -> agent: null, patient: X (in location Y)
+Pattern: X collapsed/fell/broke -> agent: null, patient: X
+Pattern: X destroyed Y -> agent: X, patient: Y
+Pattern: X sent Y to Z -> agent: X, patient: Y
+Pattern: X rendered aid -> agent: X, patient: aid
+Pattern: X suffered from Y -> agent: null, patient: X
+
+PRONOUN RESOLUTION
+
+If the agent is a vague pronoun (we, us, they, them, it, he, she) or is otherwise unclear,
+look BACKWARDS in the text to find the most recently mentioned noun or entity that
+logically fits as the actor. Replace the pronoun with that resolved entity. Don't use pronouns as agent.
+
+Examples:
+- The Government dispatched officials. They also sent warships. -> agent of sent: Government
+- Troops arrived in Messina. We assisted with rescue work. -> agent of assisted: Troops
+- The warships received orders. They proceeded to Messina. -> agent of proceeded: warships
+
+If no clear referent can be found even after looking back, set agent: null.
+NEVER leave a pronoun as the agent value — always resolve it or use null.
+
+Return ONLY a JSON array. Each element must have exactly these fields: action, agent, patient.
+No extra text, no markdown, no explanation.
