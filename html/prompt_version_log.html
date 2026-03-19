@@ -1,0 +1,339 @@
+
+<style>
+  * { box-sizing: border-box; }
+  .plg-wrap { padding: 1rem 0; font-family: var(--font-sans); }
+  .plg-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .plg-tab { padding: 6px 16px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; cursor: pointer; font-size: 13px; color: var(--color-text-secondary); }
+  .plg-tab.active { background: var(--color-background-secondary); color: var(--color-text-primary); font-weight: 500; border-color: var(--color-border-primary); }
+  .plg-panel { display: none; }
+  .plg-panel.active { display: block; }
+  .field-row { margin-bottom: 1rem; }
+  .field-row label { display: block; font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 4px; letter-spacing: 0.03em; text-transform: uppercase; }
+  .field-row input, .field-row select, .field-row textarea { width: 100%; font-family: var(--font-sans); font-size: 14px; }
+  .field-row textarea { resize: vertical; min-height: 80px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .section-divider { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 6px; margin: 1.5rem 0 1rem; }
+  .btn-primary { padding: 8px 20px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-primary); border-radius: var(--border-radius-md); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--color-text-primary); }
+  .btn-primary:hover { background: var(--color-background-tertiary); }
+  .btn-ghost { padding: 6px 12px; background: transparent; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 12px; cursor: pointer; color: var(--color-text-secondary); }
+  .btn-ghost:hover { border-color: var(--color-border-secondary); color: var(--color-text-primary); }
+  .version-card { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; background: var(--color-background-primary); }
+  .version-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .version-badge { font-size: 13px; font-weight: 500; color: var(--color-text-info); background: var(--color-background-info); padding: 3px 10px; border-radius: var(--border-radius-md); }
+  .version-date { font-size: 12px; color: var(--color-text-tertiary); }
+  .version-meta { display: flex; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+  .meta-chip { font-size: 12px; color: var(--color-text-secondary); }
+  .meta-chip span { font-weight: 500; color: var(--color-text-primary); }
+  .version-section { margin-bottom: 8px; }
+  .version-section-label { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .version-section-content { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap; }
+  .version-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--color-border-tertiary); }
+  .decision-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: var(--border-radius-md); font-weight: 500; }
+  .decision-keep { background: var(--color-background-success); color: var(--color-text-success); }
+  .decision-iterate { background: var(--color-background-warning); color: var(--color-text-warning); }
+  .decision-abandon { background: var(--color-background-danger); color: var(--color-text-danger); }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--color-text-tertiary); font-size: 14px; }
+  .toast { position: fixed; bottom: 1rem; right: 1rem; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-primary); border-radius: var(--border-radius-md); padding: 10px 16px; font-size: 13px; display: none; z-index: 99; }
+  .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .metric-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+  .metric-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; }
+  .metric-val { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+</style>
+
+<div class="plg-wrap">
+  <div class="plg-tabs">
+    <button class="plg-tab active" onclick="showTab('log')">Version log</button>
+    <button class="plg-tab" onclick="showTab('new')">+ New entry</button>
+    <button class="plg-tab" onclick="showTab('export')">Export</button>
+  </div>
+
+  <div id="tab-log" class="plg-panel active">
+    <div id="versions-list"></div>
+  </div>
+
+  <div id="tab-new" class="plg-panel">
+    <div class="section-divider">Identity</div>
+    <div class="grid-3">
+      <div class="field-row">
+        <label>Version ID</label>
+        <input type="text" id="f-version" placeholder="e.g. v2.1" />
+      </div>
+      <div class="field-row">
+        <label>Date</label>
+        <input type="date" id="f-date" />
+      </div>
+      <div class="field-row">
+        <label>Model</label>
+        <input type="text" id="f-model" placeholder="e.g. claude-sonnet-4" />
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="field-row">
+        <label>Temperature</label>
+        <input type="text" id="f-temp" placeholder="e.g. 0.0" />
+      </div>
+      <div class="field-row">
+        <label>Max tokens</label>
+        <input type="text" id="f-tokens" placeholder="e.g. 1000" />
+      </div>
+      <div class="field-row">
+        <label>Previous version</label>
+        <input type="text" id="f-prev" placeholder="e.g. v2.0" />
+      </div>
+    </div>
+
+    <div class="section-divider">Strategy</div>
+    <div class="field-row">
+      <label>Intent — what is this version trying to do?</label>
+      <textarea id="f-intent" placeholder="e.g. Fix systematic miscategorisation of tribute payments as trade exchanges"></textarea>
+    </div>
+    <div class="field-row">
+      <label>Change from previous — what did you edit and why?</label>
+      <textarea id="f-change" placeholder="e.g. Added explicit negative example for gift exchange&#10;Clarified boundary between 'trade' and 'tribute' in definitions&#10;WHY: v2.0 was confusing tribute payments with trade in ~30% of cases"></textarea>
+    </div>
+    <div class="field-row">
+      <label>Hypothesis being tested</label>
+      <textarea id="f-hypothesis" placeholder="e.g. Adding a worked negative example will reduce tribute/trade confusion by at least 10 percentage points" style="min-height: 60px;"></textarea>
+    </div>
+
+    <div class="section-divider">Prompts</div>
+    <div class="field-row">
+      <label>System prompt (full text)</label>
+      <textarea id="f-system" placeholder="You are a careful historical analyst specialising in precolonial African trade..." style="min-height: 120px; font-family: var(--font-mono); font-size: 13px;"></textarea>
+    </div>
+    <div class="field-row">
+      <label>User prompt template (use {variable} notation)</label>
+      <textarea id="f-user" placeholder="Classify the following passage: {passage_text}&#10;&#10;Return only: category | confidence | reasoning" style="min-height: 80px; font-family: var(--font-mono); font-size: 13px;"></textarea>
+    </div>
+
+    <div class="section-divider">Results</div>
+    <div class="grid-3">
+      <div class="field-row">
+        <label>Agreement rate (%)</label>
+        <input type="text" id="f-agreement" placeholder="e.g. 79%" />
+      </div>
+      <div class="field-row">
+        <label>Sample size (n)</label>
+        <input type="text" id="f-n" placeholder="e.g. 200" />
+      </div>
+      <div class="field-row">
+        <label>Change from previous (%)</label>
+        <input type="text" id="f-delta" placeholder="e.g. +8%" />
+      </div>
+    </div>
+    <div class="field-row">
+      <label>Main remaining failure / error pattern</label>
+      <textarea id="f-failures" placeholder="e.g. Ambiguous barter cases still account for ~40% of remaining errors" style="min-height: 60px;"></textarea>
+    </div>
+    <div class="field-row">
+      <label>Key qualitative observations</label>
+      <textarea id="f-obs" placeholder="e.g. Model performs well on explicit trade vocabulary but struggles with indirect markers of exchange value"></textarea>
+    </div>
+
+    <div class="section-divider">Decision</div>
+    <div class="grid-2">
+      <div class="field-row">
+        <label>Decision</label>
+        <select id="f-decision">
+          <option value="">— select —</option>
+          <option value="keep">Keep — proceed to full run</option>
+          <option value="iterate">Iterate — revise before full run</option>
+          <option value="abandon">Abandon — start different approach</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Next action / flagged for</label>
+        <input type="text" id="f-next" placeholder="e.g. Flag barter ambiguity for codebook v3" />
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem; display: flex; gap: 10px;">
+      <button class="btn-primary" onclick="saveEntry()">Save entry</button>
+      <button class="btn-ghost" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+
+  <div id="tab-export" class="plg-panel">
+    <div class="field-row" style="margin-top: 0.5rem;">
+      <label>Markdown export — copy and paste into your repo</label>
+      <textarea id="export-area" style="min-height: 400px; font-family: var(--font-mono); font-size: 12px; line-height: 1.5;" readonly></textarea>
+    </div>
+    <button class="btn-primary" onclick="copyExport()">Copy to clipboard</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'prompt_version_log_v1';
+let entries = [];
+
+async function loadEntries() {
+  try {
+    const r = await window.storage.get(STORAGE_KEY);
+    if (r && r.value) entries = JSON.parse(r.value);
+  } catch(e) { entries = []; }
+  renderLog();
+}
+
+async function saveEntries() {
+  try { await window.storage.set(STORAGE_KEY, JSON.stringify(entries)); } catch(e) {}
+}
+
+function showTab(t) {
+  document.querySelectorAll('.plg-tab').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.plg-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  event.target.classList.add('active');
+  if (t === 'export') buildExport();
+}
+
+function g(id) { return document.getElementById(id).value.trim(); }
+
+function saveEntry() {
+  const version = g('f-version');
+  if (!version) { showToast('Version ID is required'); return; }
+  const entry = {
+    id: Date.now(),
+    version, date: g('f-date'), model: g('f-model'), temp: g('f-temp'),
+    tokens: g('f-tokens'), prev: g('f-prev'), intent: g('f-intent'),
+    change: g('f-change'), hypothesis: g('f-hypothesis'),
+    system: g('f-system'), user: g('f-user'),
+    agreement: g('f-agreement'), n: g('f-n'), delta: g('f-delta'),
+    failures: g('f-failures'), obs: g('f-obs'),
+    decision: g('f-decision'), next: g('f-next')
+  };
+  entries.unshift(entry);
+  saveEntries();
+  renderLog();
+  clearForm();
+  showTab('log');
+  showToast('Entry saved');
+}
+
+function clearForm() {
+  ['f-version','f-date','f-model','f-temp','f-tokens','f-prev','f-intent','f-change',
+   'f-hypothesis','f-system','f-user','f-agreement','f-n','f-delta','f-failures','f-obs','f-next']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-decision').value = '';
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  saveEntries();
+  renderLog();
+  showToast('Entry deleted');
+}
+
+function renderLog() {
+  const el = document.getElementById('versions-list');
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-state">No entries yet.<br>Use "+ New entry" to document your first prompt version.</div>';
+    return;
+  }
+  el.innerHTML = entries.map(e => {
+    const decClass = e.decision === 'keep' ? 'keep' : e.decision === 'iterate' ? 'iterate' : e.decision === 'abandon' ? 'abandon' : '';
+    const decLabel = e.decision === 'keep' ? 'Keep' : e.decision === 'iterate' ? 'Iterate' : e.decision === 'abandon' ? 'Abandon' : '';
+    return `<div class="version-card">
+      <div class="version-card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="version-badge">${e.version}</span>
+          ${decLabel ? `<span class="decision-badge decision-${decClass}">${decLabel}</span>` : ''}
+        </div>
+        <span class="version-date">${e.date || '—'}</span>
+      </div>
+      <div class="version-meta">
+        ${e.model ? `<span class="meta-chip">Model: <span>${e.model}</span></span>` : ''}
+        ${e.temp ? `<span class="meta-chip">Temp: <span>${e.temp}</span></span>` : ''}
+        ${e.tokens ? `<span class="meta-chip">Max tokens: <span>${e.tokens}</span></span>` : ''}
+        ${e.prev ? `<span class="meta-chip">From: <span>${e.prev}</span></span>` : ''}
+      </div>
+      ${e.agreement || e.n || e.delta ? `<div class="result-grid" style="margin-bottom:10px;">
+        ${e.agreement ? `<div class="metric-card"><div class="metric-label">Agreement</div><div class="metric-val">${e.agreement}</div></div>` : ''}
+        ${e.n ? `<div class="metric-card"><div class="metric-label">Sample n</div><div class="metric-val">${e.n}</div></div>` : ''}
+        ${e.delta ? `<div class="metric-card"><div class="metric-label">vs. previous</div><div class="metric-val">${e.delta}</div></div>` : ''}
+      </div>` : ''}
+      ${e.intent ? `<div class="version-section"><div class="version-section-label">Intent</div><div class="version-section-content">${e.intent}</div></div>` : ''}
+      ${e.change ? `<div class="version-section"><div class="version-section-label">Change from ${e.prev || 'previous'}</div><div class="version-section-content">${e.change}</div></div>` : ''}
+      ${e.failures ? `<div class="version-section"><div class="version-section-label">Remaining failures</div><div class="version-section-content">${e.failures}</div></div>` : ''}
+      ${e.next ? `<div class="version-section"><div class="version-section-label">Next action</div><div class="version-section-content">${e.next}</div></div>` : ''}
+      <div class="version-actions">
+        <button class="btn-ghost" onclick="copyEntry(${e.id})">Copy as markdown</button>
+        <button class="btn-ghost" onclick="deleteEntry(${e.id})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function entryToMarkdown(e) {
+  const lines = [
+    `## ${e.version}${e.date ? '  —  ' + e.date : ''}`,
+    '',
+    `**Model:** ${e.model || '—'}  |  **Temperature:** ${e.temp || '—'}  |  **Max tokens:** ${e.tokens || '—'}  |  **Previous version:** ${e.prev || '—'}`,
+    '',
+    '### Intent',
+    e.intent || '—',
+    '',
+    '### Change from previous',
+    e.change || '—',
+    '',
+    '### Hypothesis tested',
+    e.hypothesis || '—',
+    '',
+    '### System prompt',
+    '```',
+    e.system || '—',
+    '```',
+    '',
+    '### User prompt template',
+    '```',
+    e.user || '—',
+    '```',
+    '',
+    '### Results',
+    `- Agreement rate: ${e.agreement || '—'}`,
+    `- Sample size: ${e.n || '—'}`,
+    `- Change from previous: ${e.delta || '—'}`,
+    '',
+    '### Remaining failures',
+    e.failures || '—',
+    '',
+    '### Key observations',
+    e.obs || '—',
+    '',
+    '### Decision',
+    `**${e.decision ? e.decision.toUpperCase() : '—'}** — ${e.next || '—'}`,
+    '',
+    '---',
+  ];
+  return lines.join('\n');
+}
+
+function copyEntry(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  navigator.clipboard.writeText(entryToMarkdown(e)).then(() => showToast('Copied to clipboard'));
+}
+
+function buildExport() {
+  if (!entries.length) { document.getElementById('export-area').value = 'No entries yet.'; return; }
+  const header = `# Prompt version log\nGenerated: ${new Date().toLocaleDateString()}\n\n---\n\n`;
+  document.getElementById('export-area').value = header + entries.map(entryToMarkdown).join('\n');
+}
+
+function copyExport() {
+  const v = document.getElementById('export-area').value;
+  navigator.clipboard.writeText(v).then(() => showToast('Copied to clipboard'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2000);
+}
+
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+loadEntries();
+</script>
