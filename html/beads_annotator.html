@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Beads Annotation Workshop</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; max-width: 1100px; margin: 40px auto; padding: 20px; color: #333; background: #fafafa; }
+h1 { color: #2B5797; margin-bottom: 4px; }
+.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; }
+
+/* ── Layout ── */
+.layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+.sidebar { position: sticky; top: 20px; }
+.main { min-width: 0; }
+
+/* ── Info / setup ── */
+.info-box { background: #fff3e0; padding: 12px; border-radius: 8px; border: 1px solid #ffe0b2; margin-bottom: 16px; font-size: 13px; }
+.info-box code { background: #ffe0b2; padding: 1px 5px; border-radius: 3px; }
+
+/* ── Sidebar: passage list ── */
+.sidebar-title { font-weight: bold; font-size: 13px; color: #2B5797; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.passage-list { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
+.passage-item { padding: 8px 12px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+.passage-item:last-child { border-bottom: none; }
+.passage-item:hover { background: #e8f0fe; }
+.passage-item.active { background: #2B5797; color: white; }
+.passage-item .pid { font-weight: bold; min-width: 24px; font-size: 11px; }
+.passage-item .ppreview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; opacity: .8; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #ddd; }
+.status-dot.done-agree { background: #2e7d32; }
+.status-dot.done-disagree { background: #c62828; }
+.status-dot.done-partial { background: #e65100; }
+
+/* ── Passage card ── */
+.passage-card { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.passage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.passage-id { font-weight: bold; color: #2B5797; font-size: 15px; }
+.passage-text { font-size: 14px; line-height: 1.7; color: #222; background: #f9f9f9; border-left: 4px solid #2B5797; padding: 12px 16px; border-radius: 0 6px 6px 0; font-style: italic; }
+
+/* ── Questions ── */
+.questions { margin-top: 16px; }
+.question-block { margin-bottom: 14px; }
+.q-label { font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #333; }
+.q-hint { font-size: 11px; color: #888; margin-bottom: 6px; }
+.q-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.q-btn { padding: 6px 16px; font-size: 13px; border: 1.5px solid #ccc; border-radius: 20px; background: white; cursor: pointer; transition: all 0.15s; color: #333; }
+.q-btn:hover { border-color: #2B5797; color: #2B5797; }
+.q-btn.selected { background: #2B5797; color: white; border-color: #2B5797; }
+.q-btn.selected.xo { background: #2e7d32; border-color: #2e7d32; }
+.q-btn.selected.no { background: #c62828; border-color: #c62828; }
+.q-btn.selected.na { background: #888; border-color: #888; }
+
+/* ── Reveal section ── */
+.reveal-btn { margin-top: 14px; font-size: 14px; padding: 10px 28px; cursor: pointer; background: #2B5797; color: white; border: none; border-radius: 8px; }
+.reveal-btn:hover { background: #1e3f6f; }
+.reveal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.reveal-panel { display: none; margin-top: 16px; }
+.reveal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.reveal-card { border-radius: 8px; padding: 12px 16px; }
+.reveal-card.human { background: #e3f2fd; border: 1px solid #90caf9; }
+.reveal-card.llm   { background: #f3e5f5; border: 1px solid #ce93d8; }
+.reveal-card h4 { font-size: 12px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em; }
+.reveal-card h4.human { color: #0d47a1; }
+.reveal-card h4.llm   { color: #6a1b9a; }
+.var-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,.07); }
+.var-row:last-child { border-bottom: none; }
+.var-name { color: #555; font-family: monospace; font-size: 12px; }
+.var-val { font-weight: bold; }
+.var-val.match { color: #2e7d32; }
+.var-val.mismatch { color: #c62828; }
+
+.coding-note { background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
+.coding-note strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #f9a825; margin-bottom: 4px; }
+
+.rationale-section { margin-top: 10px; }
+.rationale-btn { font-size: 13px; padding: 7px 18px; cursor: pointer; background: #6a1b9a; color: white; border: none; border-radius: 8px; }
+.rationale-btn:hover { background: #4a148c; }
+.rationale-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.rationale-output { margin-top: 10px; background: #f8f0ff; border: 1px solid #ce93d8; border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.7; display: none; white-space: pre-wrap; }
+
+.agreement-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 8px; }
+.agreement-badge.agree { background: #c8e6c9; color: #1b5e20; }
+.agreement-badge.partial { background: #ffe0b2; color: #e65100; }
+.agreement-badge.disagree { background: #ffcdd2; color: #b71c1c; }
+
+/* ── Gold snippet ── */
+.gold-snippet { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.gold-snippet h3 { font-size: 13px; color: #2B5797; margin-bottom: 10px; font-weight: bold; }
+.gold-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.gold-table th { background: #2B5797; color: white; padding: 5px 8px; text-align: left; }
+.gold-table td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+.gold-table tr:nth-child(even) td { background: #f5f5f5; }
+.gold-table td:first-child { font-weight: bold; color: #2B5797; }
+
+/* ── Summary ── */
+.summary-panel { display: none; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-top: 20px; }
+.summary-panel h2 { color: #2B5797; margin-bottom: 16px; font-size: 18px; }
+.score-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.score-card { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 140px; }
+.score-card .sc-label { font-size: 11px; color: #555; margin-bottom: 4px; }
+.score-card .sc-val { font-size: 30px; font-weight: bold; }
+.score-card .sc-sub { font-size: 11px; color: #888; margin-top: 2px; }
+.benchmark-bar { margin: 16px 0; }
+.benchmark-bar label { font-size: 13px; font-weight: bold; display: block; margin-bottom: 6px; }
+.bbar-wrap { height: 28px; background: #e0e0e0; border-radius: 8px; overflow: hidden; position: relative; }
+.bbar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: bold; color: white; transition: width 0.6s; }
+.bbar-marker { position: absolute; top: 0; height: 100%; width: 2px; background: #333; }
+.bbar-marker-label { position: absolute; top: -18px; font-size: 11px; font-weight: bold; color: #333; transform: translateX(-50%); }
+.disagree-list { margin-top: 16px; }
+.disagree-list h3 { font-size: 14px; font-weight: bold; color: #c62828; margin-bottom: 10px; }
+.disagree-item { border: 1px solid #ffcdd2; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; background: #fff5f5; font-size: 13px; }
+.disagree-item .di-id { font-weight: bold; color: #c62828; margin-bottom: 4px; }
+.disagree-item .di-text { color: #555; font-style: italic; margin-bottom: 6px; line-height: 1.5; }
+.disagree-item .di-labels { display: flex; gap: 10px; flex-wrap: wrap; }
+.lbl { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+.lbl-you { background: #bbdefb; color: #0d47a1; }
+.lbl-llm { background: #e1bee7; color: #6a1b9a; }
+
+/* ── Connection ── */
+.conn-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+.conn-row label { font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px; }
+.conn-row select, .conn-row input { font-size: 13px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; }
+.conn-status { font-size: 12px; margin-top: 4px; }
+
+button.small-btn { font-size: 13px; padding: 7px 16px; cursor: pointer; background: #2B5797; color: white; border: none; border-radius: 6px; }
+button.small-btn:hover { background: #1e3f6f; }
+button.dl-btn { font-size: 13px; padding: 7px 16px; cursor: pointer; background: #2e7d32; color: white; border: none; border-radius: 6px; margin-top: 14px; }
+button.dl-btn:hover { background: #1b5e20; }
+</style>
+</head>
+<body>
+
+<h1>Bead Exchange Annotation</h1>
+<p class="subtitle">Compare your judgment to the Co-DETECT LLM output · Understand where and why you disagree</p>
+
+<!-- Connection -->
+<div class="info-box">
+  <strong>Optional — for live rationale explanations:</strong>
+  <div class="conn-row" style="margin-top:8px; margin-bottom:0;">
+    <div>
+      <label>Endpoint</label>
+      <select id="epType" onchange="toggleEp()">
+        <option value="lmstudio">LM Studio (localhost:1234)</option>
+        <option value="hf">HuggingFace API</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div id="hfDiv" style="display:none;">
+      <label>HF token</label>
+      <input id="hfToken" type="text" placeholder="hf_..." style="width:180px;" />
+    </div>
+    <div id="hfMDiv" style="display:none;">
+      <label>Model</label>
+      <input id="hfModel" type="text" value="mistralai/Mistral-7B-Instruct-v0.3" style="width:280px;" />
+    </div>
+    <div id="cusDiv" style="display:none;">
+      <label>URL</label><input id="cusUrl" type="text" placeholder="https://api.openai.com/v1" style="width:220px;" />
+    </div>
+    <div id="cusKDiv" style="display:none;">
+      <label>Key</label><input id="cusKey" type="text" style="width:160px;" />
+    </div>
+    <div id="cusMDiv" style="display:none;">
+      <label>Model</label><input id="cusModel" type="text" placeholder="gpt-4o-mini" style="width:140px;" />
+    </div>
+    <div><button class="small-btn" onclick="testConn()" style="margin-top:18px;">Test</button></div>
+  </div>
+  <div id="connStatus" class="conn-status"></div>
+</div>
+
+<!-- Gold snippet -->
+<div class="gold-snippet">
+  <h3>Gold standard — 5 example passages (human expert, Co-DETECT v4.0)</h3>
+  <table class="gold-table">
+    <thead><tr><th>ID</th><th>Passage (excerpt)</th><th>read_entry</th><th>4a_exchange</th><th>2_nature</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>I offered the headman ten strings of blue glass beads, for which he permitted our party to pass…</td><td>1</td><td>xo</td><td>4</td></tr>
+      <tr><td>8</td><td>In former times… it was customary for European beads to be exchanged for ivory at a rate of ten strings per tusk.</td><td>1</td><td>no</td><td>NA</td></tr>
+      <tr><td>11</td><td>The women wore elaborate necklaces of blue and white beads around their necks…</td><td>1</td><td>no</td><td>NA</td></tr>
+      <tr><td>20</td><td>The transaction was completed to the satisfaction of both parties: five strings of blue beads changing hands…</td><td>1</td><td>xo</td><td>2</td></tr>
+      <tr><td>23</td><td>We departed at dawn, our party numbering fourteen men… The path led through dense woodland…</td><td>0</td><td>NA</td><td>NA</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-title">
+      <span>Passages (30)</span>
+      <button class="small-btn" onclick="showSummary()" style="font-size:11px; padding:4px 10px;">Summary</button>
+    </div>
+    <div class="passage-list" id="passageList"></div>
+    <button class="dl-btn" onclick="downloadCSV()" style="width:100%; margin-top:10px;">Download results CSV</button>
+  </div>
+
+  <!-- Main panel -->
+  <div class="main" id="mainPanel">
+    <div style="background:white; border:1px solid #ddd; border-radius:10px; padding:30px; text-align:center; color:#888;">
+      <p style="font-size:15px; margin-bottom:8px;">Select a passage from the list to begin.</p>
+      <p style="font-size:13px;">Work through them in any order. Answer the codebook questions, then reveal what the LLM produced.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Summary panel -->
+<div class="summary-panel" id="summaryPanel">
+  <h2>Your results</h2>
+  <div class="score-grid" id="scoreGrid"></div>
+  <div class="benchmark-bar">
+    <label>Your agreement vs LLM compared to Co-DETECT benchmark (73%)</label>
+    <div class="bbar-wrap" id="benchBar"></div>
+  </div>
+  <div class="disagree-list" id="disagreeList"></div>
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────────────
+var PASSAGES = [
+  {id:1,  text:"I offered the headman ten strings of blue glass beads, for which he permitted our party to pass through his territory and supplied us with two goats for the evening's provisions."},
+  {id:2,  text:"At the market we purchased a large quantity of dried fish, paying for it with small white beads at the rate of one string per basket."},
+  {id:3,  text:"The chief demanded his customary tribute before we could proceed further into the interior; this consisted of three fathoms of red cloth and a portion of our remaining beads, which we duly presented."},
+  {id:4,  text:"We bartered a quantity of Venetian beads — blue and white — for ivory tusks of considerable size, at terms which we judged favourable given the distance from the coast."},
+  {id:5,  text:"Before departing from the village I gave the elder's wife a string of bright coral-coloured beads as a parting gift, which she received with evident pleasure."},
+  {id:6,  text:"The Arab traders sold their glass beads to the local merchants at twice the price they had paid on the coast, receiving in return quantities of beeswax and dried skins."},
+  {id:7,  text:"Having no cloth remaining, I purchased a day's supply of grain with a handful of small iron beads, which the women of the village accepted in lieu of the usual payment."},
+  {id:8,  text:"In former times, before the Arab caravans had penetrated so far into the interior, it was customary for European beads to be exchanged for ivory at a rate of ten strings per tusk."},
+  {id:9,  text:"Glass beads of Venetian manufacture had long served as the principal medium of exchange in this part of the continent, displacing older forms of barter in many areas."},
+  {id:10, text:"The people of this region had, by all accounts, traded extensively in beads with the coastal merchants for several generations before our arrival."},
+  {id:11, text:"The women wore elaborate necklaces of blue and white beads around their necks, with additional strands wound about their wrists and ankles."},
+  {id:12, text:"The chief appeared before us in full ceremonial dress, adorned with strings of large amber-coloured beads that hung to his waist."},
+  {id:13, text:"Children of the village were ornamented with small glass beads of many colours, which their mothers had threaded onto cotton string."},
+  {id:14, text:"We were informed that ivory could be obtained in this district for approximately fifteen strings of blue beads per tusk, though we did not ourselves make any purchase."},
+  {id:15, text:"The going rate for a day's porterage was two strings of white beads, a price that had apparently remained stable for many years."},
+  {id:16, text:"We observed several traders carrying large quantities of European glass beads, evidently intended for exchange further in the interior."},
+  {id:17, text:"The beads displayed at the market were of many varieties — Venetian glass, locally made clay beads, and some of shell — arranged in long strings on wooden frames."},
+  {id:18, text:"The headman showed us his store of beads and appeared willing to part with some in exchange for our cloth, though no agreement was reached before nightfall."},
+  {id:19, text:"I was told that if I wished to hire porters, I should offer them beads rather than cloth, as the local preference had shifted considerably in recent months."},
+  {id:20, text:"The transaction was completed to the satisfaction of both parties: five strings of blue beads changing hands in return for safe passage and a night's lodging."},
+  {id:21, text:"We visited a workshop in which local artisans produced clay beads, firing them in small kilns and painting them with coloured pigments before stringing them together."},
+  {id:22, text:"The glass beads were made by melting fragments of European bottles in a furnace, drawing the molten glass into thin rods, and cutting them into small sections."},
+  {id:23, text:"We departed at dawn, our party numbering fourteen men including porters, guides, and two armed escorts. The path led through dense woodland for the greater part of the morning."},
+  {id:24, text:"The village was prosperous and well-supplied, the people friendly and disposed to assist our passage. Among the goods displayed in the small market were beads, cloth, and various foodstuffs."},
+  {id:25, text:"Our host served us a meal of grain porridge and dried meat, for which we were grateful after the exertions of the day's march."},
+  {id:26, text:"I bought from the old diviner the secret of a local medicinal plant, paying him three strings of red beads as agreed."},
+  {id:27, text:"On meeting the paramount chief, we presented him with the customary gifts: a length of fine cloth, a looking-glass, and several strings of the large blue beads he had expressed a desire to possess."},
+  {id:28, text:"He suggested that beads might prove useful currency if we were to venture further north, where cloth was said to be less valued."},
+  {id:29, text:"The beads in common use here were of two kinds: small white glass beads imported from the coast, and locally produced clay beads of reddish-brown colour. We purchased a supply of the former at the rate of three strings for a measure of millet."},
+  {id:30, text:"Before we could cross into the territory of the neighbouring chief, his representative intercepted us and collected a toll of five strings of beads per person, which we paid without protest."}
+];
+
+// Gold standard (human expert, Co-DETECT v4.0)
+var GOLD = {
+  1:{re:"1",ex:"xo",nat:"4"}, 2:{re:"1",ex:"xo",nat:"2"}, 3:{re:"1",ex:"xo",nat:"3"},
+  4:{re:"1",ex:"xo",nat:"1"}, 5:{re:"1",ex:"xo",nat:"4"}, 6:{re:"1",ex:"xo",nat:"1"},
+  7:{re:"1",ex:"xo",nat:"2"}, 8:{re:"1",ex:"no",nat:"NA"}, 9:{re:"1",ex:"no",nat:"NA"},
+  10:{re:"1",ex:"no",nat:"NA"}, 11:{re:"1",ex:"no",nat:"NA"}, 12:{re:"1",ex:"no",nat:"NA"},
+  13:{re:"1",ex:"no",nat:"NA"}, 14:{re:"1",ex:"no",nat:"NA"}, 15:{re:"1",ex:"no",nat:"NA"},
+  16:{re:"1",ex:"no",nat:"NA"}, 17:{re:"1",ex:"no",nat:"NA"}, 18:{re:"1",ex:"no",nat:"NA"},
+  19:{re:"1",ex:"no",nat:"NA"}, 20:{re:"1",ex:"xo",nat:"2"}, 21:{re:"1",ex:"no",nat:"NA"},
+  22:{re:"1",ex:"no",nat:"NA"}, 23:{re:"0",ex:"NA",nat:"NA"}, 24:{re:"0",ex:"NA",nat:"NA"},
+  25:{re:"0",ex:"NA",nat:"NA"}, 26:{re:"1",ex:"xo",nat:"2"}, 27:{re:"1",ex:"xo",nat:"4"},
+  28:{re:"1",ex:"no",nat:"NA"}, 29:{re:"1",ex:"xo",nat:"2"}, 30:{re:"1",ex:"xo",nat:"3"}
+};
+
+// Pre-run LLM outputs (Co-DETECT pipeline, claude-haiku, v4.0 codebook)
+// Includes characteristic errors: over-coding exchanges, read_entry over-inclusion
+var LLM = {
+  1:{re:"1",ex:"xo",nat:"4"}, 2:{re:"1",ex:"xo",nat:"2"}, 3:{re:"1",ex:"xo",nat:"3"},
+  4:{re:"1",ex:"xo",nat:"1"}, 5:{re:"1",ex:"xo",nat:"4"}, 6:{re:"1",ex:"xo",nat:"1"},
+  7:{re:"1",ex:"xo",nat:"2"}, 8:{re:"1",ex:"xo",nat:"1"}, // typical over-coding error
+  9:{re:"1",ex:"no",nat:"NA"}, 10:{re:"1",ex:"xo",nat:"1"}, // over-coding pattern
+  11:{re:"1",ex:"no",nat:"NA"}, 12:{re:"1",ex:"no",nat:"NA"}, 13:{re:"1",ex:"no",nat:"NA"},
+  14:{re:"1",ex:"no",nat:"NA"}, 15:{re:"1",ex:"no",nat:"NA"}, 16:{re:"1",ex:"no",nat:"NA"},
+  17:{re:"1",ex:"no",nat:"NA"}, 18:{re:"1",ex:"xo",nat:"1"}, // incomplete negotiation coded as xo
+  19:{re:"1",ex:"no",nat:"NA"}, 20:{re:"1",ex:"xo",nat:"2"}, 21:{re:"1",ex:"no",nat:"NA"},
+  22:{re:"1",ex:"no",nat:"NA"}, 23:{re:"0",ex:"NA",nat:"NA"}, 24:{re:"1",ex:"no",nat:"NA"}, // over-inclusion on read_entry
+  25:{re:"0",ex:"NA",nat:"NA"}, 26:{re:"1",ex:"xo",nat:"2"}, 27:{re:"1",ex:"xo",nat:"4"},
+  28:{re:"1",ex:"no",nat:"NA"}, 29:{re:"1",ex:"xo",nat:"2"}, 30:{re:"1",ex:"xo",nat:"3"}
+};
+
+// Coding notes
+var NOTES = {
+  1:"Clear diplomatic/passage exchange. Narrator (identifiable party) offers beads; headman grants passage + goats. Past tense, completed. Gift/diplomatic because it facilitates passage — a social obligation rather than commercial transaction.",
+  2:"Commercial sale. 'Purchased' is an explicit transaction verb. Beads function as currency at a stated rate. Both parties identifiable (narrator + market sellers).",
+  3:"Tribute. Chief 'demanded' payment before passage — obligation to authority. 'Duly presented' confirms completion. Type 3 because it is coerced rather than voluntary exchange.",
+  4:"Barter. 'Bartered' is explicit. Venetian beads exchanged for ivory tusks — goods for goods, both specified. Type 1.",
+  5:"Gift/social exchange. 'Gave… as a parting gift' is clear social exchange. Intangible return (goodwill, relationship maintenance) is sufficient — not all exchanges require a material return.",
+  6:"Barter. Arab traders sell beads, receive beeswax and skins. Both parties identifiable, transaction completed, goods specified on both sides.",
+  7:"Commercial. 'Purchased' grain with beads. Beads function as substitute currency ('in lieu of the usual payment'). Type 2.",
+  8:"CRITICAL CASE: Historical generalisation. 'It was customary' signals a repeated pattern across time, not a specific completed transaction. No identifiable parties. This is one of the most common LLM errors — the word 'exchanged' is present but refers to habitual practice, not a single event.",
+  9:"Generalisation about beads as currency system — describes long-term structural role, no specific transaction or parties.",
+  10:"Pattern statement across generations. 'Had traded' is past perfect referring to an ongoing historical pattern, not a completed single event.",
+  11:"Adornment/wearing description. No transaction. Beads are substantive (read_entry=1) but worn, not exchanged.",
+  12:"Adornment description. Chief's ceremonial dress — no exchange implied.",
+  13:"Adornment description. Children decorated by mothers — no exchange, purely descriptive.",
+  14:"Price information only. The passage explicitly states 'we did not ourselves make any purchase' — the coder has done the work for us.",
+  15:"Price/rate statement. No transaction. The rate is noted but no exchange is described as occurring.",
+  16:"Observation of traders carrying goods. No exchange witnessed or recorded.",
+  17:"Market inventory description. Beads displayed but not sold — 'arranged on frames' is a display, not a sale.",
+  18:"EDGE CASE: Incomplete negotiation. 'Appeared willing' and 'no agreement was reached' are the key phrases. Willingness ≠ completion. LLMs frequently code this as xo.",
+  19:"Hypothetical advice. 'If I wished to hire' is conditional/hypothetical. No transaction occurred or was described.",
+  20:"Completed transaction. 'Transaction was completed' is explicit. 'Changing hands' confirms the transfer. Both parties implied (narrator + counterparty). Commercial — beads as payment for services.",
+  21:"Manufacturing/production description. No exchange of ownership. Artisans produce beads — no sale or trade described.",
+  22:"Manufacturing process. Glass recycling into beads — production, not exchange.",
+  23:"Beads not mentioned. Passage irrelevant to bead trade. read_entry=0.",
+  24:"EDGE CASE on read_entry. Beads appear in a list of market goods but are not the subject of the passage — no detail, no exchange, purely incidental. read_entry=0. LLMs often code this as 1.",
+  25:"No beads at all. Irrelevant passage. read_entry=0.",
+  26:"Intangible exchange. 'Bought' is an explicit transaction verb. The item purchased (a secret/knowledge) is intangible — but v4.0 explicitly includes intangible goods as valid exchange objects. Type 2 (commercial, beads as payment).",
+  27:"Diplomatic gift. 'Presented him with the customary gifts' — explicit gifting language. The chief's 'expressed desire' confirms the social-diplomatic nature. Type 4.",
+  28:"Hypothetical. 'Might prove useful if we were to venture' — both conditional and future. No transaction described.",
+  29:"Mixed passage: first sentence is descriptive, second contains a completed purchase. 'We purchased a supply… at the rate of three strings for a measure of millet' is explicit. Code for the exchange present in the text.",
+  30:"Tribute/toll. 'Collected a toll… which we paid' — both the demand and the completion are explicit. Type 3 (obligatory payment to authority)."
+};
+
+// Participant answers
+var answers = {}; // {id: {re, ex, nat}}
+
+// ── Build sidebar ─────────────────────────────────────────────────────────────
+function buildList() {
+  var list = document.getElementById("passageList");
+  list.innerHTML = PASSAGES.map(function(p) {
+    var preview = p.text.substring(0, 45) + "…";
+    return '<div class="passage-item" id="pi-'+p.id+'" onclick="loadPassage('+p.id+')">'
+      + '<span class="pid">' + p.id + '</span>'
+      + '<span class="ppreview">' + esc(preview) + '</span>'
+      + '<span class="status-dot" id="dot-'+p.id+'"></span>'
+      + '</div>';
+  }).join("");
+}
+
+function updateDot(id) {
+  var dot = document.getElementById("dot-"+id);
+  if (!dot || !answers[id]) return;
+  var a = answers[id]; var g = GOLD[id];
+  var match = a.re===g.re && a.ex===g.ex && a.nat===g.nat;
+  var partial = (a.re===g.re || a.ex===g.ex);
+  dot.className = "status-dot " + (match ? "done-agree" : partial ? "done-partial" : "done-disagree");
+}
+
+// ── Load a passage ────────────────────────────────────────────────────────────
+var currentId = null;
+
+function loadPassage(id) {
+  currentId = id;
+  var p = PASSAGES.find(function(x){ return x.id===id; });
+  // Mark active
+  document.querySelectorAll(".passage-item").forEach(function(el){ el.classList.remove("active"); });
+  document.getElementById("pi-"+id).classList.add("active");
+
+  var saved = answers[id] || {};
+  var html = '<div class="passage-card">'
+    + '<div class="passage-header"><span class="passage-id">Passage ' + id + ' of 30</span></div>'
+    + '<div class="passage-text">' + esc(p.text) + '</div>'
+    + '<div class="questions">'
+
+    // Q1: read_entry
+    + '<div class="question-block">'
+    + '<div class="q-label">Q1 — Is this passage substantively about bead trade?</div>'
+    + '<div class="q-hint">Code 1 if beads are central to the passage. Code 0 if beads are absent or mentioned only in passing.</div>'
+    + '<div class="q-options">'
+    + qBtn("re", "1", "1 — Yes, relevant", saved.re==="1")
+    + qBtn("re", "0", "0 — No / incidental", saved.re==="0")
+    + '</div></div>'
+
+    // Q2: 4a_exchange
+    + '<div class="question-block">'
+    + '<div class="q-label">Q2 — Did a completed bead exchange occur?</div>'
+    + '<div class="q-hint">xo requires: explicit past-tense transaction verb + identifiable party + completed action. Generalisations, wearing, price statements, hypotheticals, and unfinished negotiations = no.</div>'
+    + '<div class="q-options">'
+    + qBtn("ex","xo","xo — Exchange occurred",saved.ex==="xo","xo")
+    + qBtn("ex","no","no — No exchange",saved.ex==="no","no")
+    + qBtn("ex","NA","NA — Not applicable",saved.ex==="NA","na")
+    + '</div></div>'
+
+    // Q3: nature
+    + '<div class="question-block">'
+    + '<div class="q-label">Q3 — If exchange occurred, what type?</div>'
+    + '<div class="q-hint">Only answer if Q2 = xo. Otherwise select NA.</div>'
+    + '<div class="q-options">'
+    + qBtn("nat","1","1 — Barter",saved.nat==="1")
+    + qBtn("nat","2","2 — Sale / commercial",saved.nat==="2")
+    + qBtn("nat","3","3 — Tribute / tax",saved.nat==="3")
+    + qBtn("nat","4","4 — Gift / diplomatic",saved.nat==="4")
+    + qBtn("nat","NA","NA",saved.nat==="NA","na")
+    + '</div></div>'
+
+    + '</div>' // end questions
+
+    + '<button class="reveal-btn" id="revealBtn-'+id+'" onclick="reveal('+id+')">Reveal LLM answer</button>'
+
+    + '<div class="reveal-panel" id="reveal-'+id+'">'
+    + buildReveal(id)
+    + '</div>'
+    + '</div>'; // end passage-card
+
+  document.getElementById("mainPanel").innerHTML = html;
+  if (saved.re) document.getElementById("reveal-"+id).style.display = "block";
+}
+
+function qBtn(field, val, label, selected, extraClass) {
+  var cls = "q-btn" + (selected ? " selected" + (extraClass ? " "+extraClass : "") : "");
+  return '<button class="'+cls+'" onclick="selectQ(\''+field+'\',\''+val+'\',this)">'
+    + esc(label) + '</button>';
+}
+
+function selectQ(field, val, btn) {
+  if (!currentId) return;
+  if (!answers[currentId]) answers[currentId] = {};
+  answers[currentId][field] = val;
+  // Deselect siblings
+  btn.parentElement.querySelectorAll(".q-btn").forEach(function(b){
+    b.className = "q-btn";
+  });
+  btn.className = "q-btn selected" + (val==="xo"?" xo":val==="no"?" no":val==="NA"?" na":"");
+  updateDot(currentId);
+}
+
+// ── Build reveal panel ────────────────────────────────────────────────────────
+function buildReveal(id) {
+  var g = GOLD[id]; var l = LLM[id]; var a = answers[id]||{};
+  var vars = [{k:"re",label:"read_entry"},{k:"ex",label:"4a_exchange"},{k:"nat",label:"2_nature"}];
+
+  function varRows(src) {
+    return vars.map(function(v) {
+      var val = src[v.k];
+      var vs_gold = val === g[v.k];
+      return '<div class="var-row">'
+        + '<span class="var-name">'+v.label+'</span>'
+        + '<span class="var-val '+(vs_gold?"match":"mismatch")+'">'+esc(val)+'</span>'
+        + '</div>';
+    }).join("");
+  }
+
+  // Agreement badge
+  var youVsLlm = a.re && (a.re===l.re && a.ex===l.ex && a.nat===l.nat) ? "agree"
+    : a.re && (a.re===l.re || a.ex===l.ex) ? "partial" : "disagree";
+  var badgeLabel = youVsLlm==="agree" ? "You agree with the LLM"
+    : youVsLlm==="partial" ? "Partial agreement" : "You disagree with the LLM";
+
+  return '<div class="reveal-grid">'
+    + '<div class="reveal-card human"><h4 class="human">Your answers</h4>'
+    + (a.re ? varRows(a) : '<span style="font-size:12px;color:#888;">Not yet answered</span>')
+    + '</div>'
+    + '<div class="reveal-card llm"><h4 class="llm">Co-DETECT LLM output</h4>' + varRows(l) + '</div>'
+    + '</div>'
+    + (a.re ? '<div><span class="agreement-badge '+youVsLlm+'">'+badgeLabel+'</span></div>' : '')
+    + '<div class="coding-note" style="margin-top:12px;">'
+    + '<strong>Coding note (Co-DETECT v4.0)</strong>'
+    + esc(NOTES[id])
+    + '</div>'
+    + '<div class="rationale-section">'
+    + '<button class="rationale-btn" id="ratBtn-'+id+'" onclick="getRationale('+id+')">Ask model to explain further ↗</button>'
+    + '<div class="rationale-output" id="ratOut-'+id+'"></div>'
+    + '</div>';
+}
+
+function reveal(id) {
+  if (!answers[id] || !answers[id].re) {
+    alert("Please answer at least Q1 before revealing.");
+    return;
+  }
+  var panel = document.getElementById("reveal-"+id);
+  panel.innerHTML = buildReveal(id);
+  panel.style.display = "block";
+  updateDot(id);
+}
+
+// ── Live rationale ────────────────────────────────────────────────────────────
+async function getRationale(id) {
+  var btn = document.getElementById("ratBtn-"+id);
+  var out = document.getElementById("ratOut-"+id);
+  btn.disabled = true;
+  btn.textContent = "Asking model…";
+  out.style.display = "block";
+  out.textContent = "Waiting…";
+
+  var p = PASSAGES.find(function(x){ return x.id===id; });
+  var g = GOLD[id]; var l = LLM[id]; var a = answers[id]||{};
+
+  var systemPrompt = "You are an expert in 19th-century African economic history and computational text analysis. "
+    + "Explain coding decisions clearly for a workshop audience of humanities researchers. Be concise (3-5 sentences).";
+
+  var userPrompt = "A passage from a 19th-century European travel account has been coded using a bead exchange codebook.\n\n"
+    + "PASSAGE:\n\"" + p.text + "\"\n\n"
+    + "CODEBOOK VARIABLES:\n"
+    + "- read_entry: Is the passage substantively about bead trade? (1=yes, 0=no)\n"
+    + "- 4a_exchange: Did a completed exchange occur? (xo=yes, no=no, NA=not applicable)\n"
+    + "- 2_nature_of_exchange: Type of exchange (1=barter, 2=sale, 3=tribute, 4=gift, NA=none)\n\n"
+    + "GOLD STANDARD (human expert): read_entry="+g.re+", 4a_exchange="+g.ex+", 2_nature="+g.nat+"\n"
+    + "LLM OUTPUT (Co-DETECT pipeline): read_entry="+l.re+", 4a_exchange="+l.ex+", 2_nature="+l.nat+"\n"
+    + "PARTICIPANT ANSWER: read_entry="+(a.re||"?")+", 4a_exchange="+(a.ex||"?")+", 2_nature="+(a.nat||"?")+"\n\n"
+    + "Please explain: (1) Why the gold standard coded it this way, and (2) if the LLM differed from the gold standard, why the LLM likely made that error.";
+
+  try {
+    var resp = await callModel(systemPrompt, userPrompt, 0.3);
+    out.textContent = resp;
+  } catch(e) {
+    out.textContent = "Error: " + e.message + "\n\nMake sure a model is connected and the Test button shows success.";
+  }
+  btn.disabled = false;
+  btn.textContent = "Ask model to explain further ↗";
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function showSummary() {
+  var done = Object.keys(answers).filter(function(id){ return answers[id].re; });
+  if (!done.length) { alert("Answer at least one passage first."); return; }
+
+  var vars = [{k:"re",label:"read_entry"},{k:"ex",label:"4a_exchange"},{k:"nat",label:"2_nature"}];
+  var youVsLlm = {re:{m:0,t:0}, ex:{m:0,t:0}, nat:{m:0,t:0}};
+  var disagrees = [];
+
+  done.forEach(function(sid) {
+    var id = parseInt(sid);
+    var a = answers[id]; var l = LLM[id];
+    vars.forEach(function(v) {
+      if (a[v.k] && l[v.k]) {
+        youVsLlm[v.k].t++;
+        if (a[v.k]===l[v.k]) youVsLlm[v.k].m++;
+      }
+    });
+    var fullMatch = a.re===l.re && a.ex===l.ex && a.nat===l.nat;
+    if (!fullMatch) {
+      disagrees.push({id:id, a:a, l:l});
+    }
+  });
+
+  var totalM = vars.reduce(function(s,v){ return s+youVsLlm[v.k].m; },0);
+  var totalT = vars.reduce(function(s,v){ return s+youVsLlm[v.k].t; },0);
+  var overall = totalT ? Math.round(100*totalM/totalT) : 0;
+
+  // Score cards
+  var grid = document.getElementById("scoreGrid");
+  grid.innerHTML = "";
+  [
+    {label:"Overall you vs LLM", val:overall, sub:totalM+"/"+totalT+" fields"},
+    {label:"read_entry", val:youVsLlm.re.t?Math.round(100*youVsLlm.re.m/youVsLlm.re.t):0, sub:youVsLlm.re.m+"/"+youVsLlm.re.t},
+    {label:"4a_exchange", val:youVsLlm.ex.t?Math.round(100*youVsLlm.ex.m/youVsLlm.ex.t):0, sub:youVsLlm.ex.m+"/"+youVsLlm.ex.t},
+    {label:"2_nature", val:youVsLlm.nat.t?Math.round(100*youVsLlm.nat.m/youVsLlm.nat.t):0, sub:youVsLlm.nat.m+"/"+youVsLlm.nat.t},
+    {label:"Passages completed", val:done.length, sub:"of 30", raw:true}
+  ].forEach(function(c) {
+    var col = c.raw ? "#2B5797" : c.val>=70 ? "#2e7d32" : c.val>=50 ? "#e65100" : "#c62828";
+    var card = document.createElement("div");
+    card.className = "score-card";
+    card.innerHTML = '<div class="sc-label">'+c.label+'</div>'
+      + '<div class="sc-val" style="color:'+col+'">'+(c.raw?c.val:c.val+"%")+'</div>'
+      + '<div class="sc-sub">'+c.sub+'</div>';
+    grid.appendChild(card);
+  });
+
+  // Benchmark bar
+  var bar = document.getElementById("benchBar");
+  var codetect = 73;
+  bar.innerHTML = '<div class="bbar-fill" style="width:'+overall+'%; background:'+(overall>=70?"#2B5797":"#e65100")+'">'
+    + overall+'% you</div>'
+    + '<div class="bbar-marker" style="left:'+codetect+'%">'
+    + '<span class="bbar-marker-label">'+codetect+'% Co-DETECT</span></div>';
+
+  // Disagree list
+  var dl = document.getElementById("disagreeList");
+  if (!disagrees.length) {
+    dl.innerHTML = '<h3 style="color:#2e7d32;">Perfect agreement with LLM on all completed passages!</h3>';
+  } else {
+    dl.innerHTML = '<h3>Passages where you and the LLM disagreed ('+disagrees.length+')</h3>'
+      + disagrees.map(function(d) {
+        var p = PASSAGES.find(function(x){ return x.id===d.id; });
+        var diffs = [];
+        [{k:"re",l:"read_entry"},{k:"ex",l:"4a_exchange"},{k:"nat",l:"2_nature"}].forEach(function(v) {
+          if (d.a[v.k] !== d.l[v.k]) diffs.push(v.l+": you="+d.a[v.k]+" / LLM="+d.l[v.k]);
+        });
+        return '<div class="disagree-item">'
+          + '<div class="di-id">Passage ' + d.id + '</div>'
+          + '<div class="di-text">' + esc(p.text.substring(0,160)+(p.text.length>160?"…":"")) + '</div>'
+          + '<div class="di-labels">'
+          + diffs.map(function(df){ return '<span class="lbl lbl-you">'+esc(df)+'</span>'; }).join("")
+          + '</div></div>';
+      }).join("");
+  }
+
+  document.getElementById("summaryPanel").style.display = "block";
+  document.getElementById("summaryPanel").scrollIntoView({behavior:"smooth"});
+}
+
+// ── Download ──────────────────────────────────────────────────────────────────
+function downloadCSV() {
+  var rows = [["id","passage_preview","you_read_entry","you_4a_exchange","you_2_nature",
+               "llm_read_entry","llm_4a_exchange","llm_2_nature",
+               "gold_read_entry","gold_4a_exchange","gold_2_nature",
+               "you_vs_llm_exchange","you_vs_gold_exchange"]];
+  PASSAGES.forEach(function(p) {
+    var a = answers[p.id]||{}; var l = LLM[p.id]; var g = GOLD[p.id];
+    rows.push([p.id, p.text.substring(0,80),
+      a.re||"", a.ex||"", a.nat||"",
+      l.re, l.ex, l.nat, g.re, g.ex, g.nat,
+      a.ex && a.ex===l.ex ? "agree":"disagree",
+      a.ex && a.ex===g.ex ? "agree":"disagree"
+    ]);
+  });
+  var csv = rows.map(function(r){ return r.map(function(v){ v=String(v); return (v.indexOf(",")>-1||v.indexOf('"')>-1)?'"'+v.replace(/"/g,'""')+'"':v; }).join(","); }).join("\n");
+  var a2 = document.createElement("a");
+  a2.href = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  a2.download = "beads_annotation_results.csv"; a2.click();
+}
+
+// ── Model connection ──────────────────────────────────────────────────────────
+function toggleEp() {
+  var t = document.getElementById("epType").value;
+  document.getElementById("hfDiv").style.display = t==="hf"?"":"none";
+  document.getElementById("hfMDiv").style.display = t==="hf"?"":"none";
+  document.getElementById("cusDiv").style.display = t==="custom"?"":"none";
+  document.getElementById("cusKDiv").style.display = t==="custom"?"":"none";
+  document.getElementById("cusMDiv").style.display = t==="custom"?"":"none";
+}
+
+async function callModel(sp, up, temp) {
+  var t = document.getElementById("epType").value;
+  temp = parseFloat(temp)||0;
+  var body, url, headers = {"Content-Type":"application/json"};
+  var msgs = [{role:"system",content:sp},{role:"user",content:up}];
+  if (t==="lmstudio") {
+    url="http://localhost:1234/v1/chat/completions";
+    body=JSON.stringify({messages:msgs,temperature:temp,max_tokens:400});
+  } else if (t==="hf") {
+    var hfm = document.getElementById("hfModel").value;
+    url="https://api-inference.huggingface.co/models/"+hfm+"/v1/chat/completions";
+    headers["Authorization"]="Bearer "+document.getElementById("hfToken").value;
+    body=JSON.stringify({model:hfm,messages:msgs,temperature:Math.max(temp,0.01),max_tokens:400});
+  } else {
+    url=document.getElementById("cusUrl").value+"/chat/completions";
+    headers["Authorization"]="Bearer "+document.getElementById("cusKey").value;
+    body=JSON.stringify({model:document.getElementById("cusModel").value,messages:msgs,temperature:temp,max_tokens:400});
+  }
+  var r = await fetch(url,{method:"POST",headers:headers,body:body});
+  var d = await r.json();
+  return d.choices[0].message.content.trim();
+}
+
+async function testConn() {
+  document.getElementById("connStatus").textContent = "Testing…";
+  try {
+    var r = await callModel("You are helpful.","Reply with just the word OK.",0);
+    document.getElementById("connStatus").innerHTML = '<span style="color:#2e7d32;">✓ Connected: '+esc(r.substring(0,50))+'</span>';
+  } catch(e) {
+    document.getElementById("connStatus").innerHTML = '<span style="color:#c62828;">✗ '+esc(e.message)+'</span>';
+  }
+}
+
+function esc(t) { var d=document.createElement("div"); d.textContent=t; return d.innerHTML; }
+
+buildList();
+</script>
+</body>
+</html>
