@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptLab — Bead Exchange Coding Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e0d0b;
+    --surface:   #17150f;
+    --card:      #201d16;
+    --card-hi:   #2a261d;
+    --border:    #38332a;
+    --border-hi: #524c3e;
+    --accent:    #c8953a;
+    --accent-lo: #7a5920;
+    --accent-hi: #e8b560;
+    --text:      #ede5d8;
+    --text-2:    #a0947f;
+    --text-3:    #5e5649;
+    --ok:        #7ab87a;
+    --err:       #d46060;
+    --info:      #6aa0c8;
+    --tag-bg:    #2e2a1e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo-mark {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  header h1 span { color: var(--accent); }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text-2);
+    margin-left: auto;
+    text-align: right;
+    line-height: 1.3;
+  }
+
+  /* ── LAYOUT ──────────────────────────────────────────────── */
+  .workspace {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    height: calc(100vh - 63px);
+  }
+  .panel-left {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-right {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── SECTION HEADERS ─────────────────────────────────────── */
+  .section-head {
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .section-head .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .section-head .badge {
+    font-size: 10px;
+    background: var(--tag-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent-lo);
+    padding: 1px 7px;
+    border-radius: 20px;
+    margin-left: auto;
+  }
+
+  /* ── SCROLLABLE AREAS ─────────────────────────────────────── */
+  .scrollable {
+    overflow-y: auto;
+    flex: 1;
+    padding: 0;
+  }
+  .scrollable::-webkit-scrollbar { width: 4px; }
+  .scrollable::-webkit-scrollbar-track { background: transparent; }
+  .scrollable::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── CONNECTION CONFIG ────────────────────────────────────── */
+  .conn-panel {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .conn-tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .conn-tab {
+    flex: 1;
+    padding: 7px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'Lato', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .conn-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .conn-tab:not(:last-child) { border-right: 1px solid var(--border); }
+
+  .conn-fields { display: flex; flex-direction: column; gap: 8px; }
+  .field-row { display: flex; flex-direction: column; gap: 4px; }
+  .field-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  input[type="text"], input[type="password"], select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 7px 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  select:focus,
+  textarea:focus { border-color: var(--accent); }
+
+  select option { background: var(--card); }
+
+  /* ── OBSERVATION SELECTOR ─────────────────────────────────── */
+  .obs-list {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .obs-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    text-align: left;
+    width: 100%;
+  }
+  .obs-item:hover { background: var(--card); border-color: var(--border); }
+  .obs-item.active { background: var(--card-hi); border-color: var(--accent-lo); }
+  .obs-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .obs-preview {
+    font-family: 'Lato', sans-serif;
+    font-size: 12px;
+    color: var(--text-2);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .obs-meta {
+    font-size: 10px;
+    color: var(--text-3);
+    margin-top: 3px;
+    display: block;
+  }
+
+  /* ── OBSERVATION DISPLAY ──────────────────────────────────── */
+  .obs-display {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .obs-full-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text);
+    font-style: italic;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 8px;
+  }
+  .obs-source-line {
+    font-size: 11px;
+    color: var(--text-3);
+    display: flex;
+    gap: 12px;
+  }
+  .obs-source-line span { color: var(--text-2); }
+
+  /* ── PROMPT EDITOR ────────────────────────────────────────── */
+  .prompt-area { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .prompt-area + .prompt-area { border-top: 1px solid var(--border-hi); }
+
+  .prompt-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .prompt-head .lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+  }
+  .prompt-head .hint {
+    font-size: 10px;
+    color: var(--text-3);
+    margin-left: auto;
+    font-style: italic;
+  }
+
+  textarea.prompt-input {
+    resize: vertical;
+    min-height: 80px;
+    font-size: 12px;
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  textarea.system-input { min-height: 80px; color: var(--info); }
+  textarea.user-input   { min-height: 100px; }
+
+  .var-chip {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--tag-bg);
+    border: 1px solid var(--accent-lo);
+    color: var(--accent-hi);
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+    user-select: none;
+  }
+  .var-chip:hover { background: var(--accent-lo); }
+
+  /* ── PRESET SELECTOR ──────────────────────────────────────── */
+  .preset-row {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .preset-row .lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+  .preset-row select { flex: 1; font-family: 'Lato', sans-serif; }
+
+  /* ── RUN BAR ──────────────────────────────────────────────── */
+  .run-bar {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .btn-run {
+    padding: 9px 22px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Lato', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-run:hover { background: var(--accent-hi); }
+  .btn-run:disabled { background: var(--border); color: var(--text-3); cursor: not-allowed; }
+
+  .btn-clear {
+    padding: 9px 16px;
+    background: transparent;
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Lato', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { border-color: var(--border-hi); color: var(--text); }
+
+  .run-info { font-size: 11px; color: var(--text-3); margin-left: auto; }
+
+  /* ── RIGHT PANEL: RESULTS ─────────────────────────────────── */
+  .results-header {
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .results-header .lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-3);
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-3);
+    transition: background 0.3s;
+  }
+  .status-dot.ok      { background: var(--ok); }
+  .status-dot.err     { background: var(--err); }
+  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  .results-meta {
+    margin-left: auto;
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .results-meta strong { color: var(--text-2); }
+
+  .results-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .results-body::-webkit-scrollbar { width: 4px; }
+  .results-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .result-card-head {
+    padding: 10px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .result-card-head .run-n {
+    font-family: 'Playfair Display', serif;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .result-card-head .meta-pills { margin-left: auto; display: flex; gap: 6px; }
+  .pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    color: var(--text-3);
+    border: 1px solid var(--border);
+  }
+  .pill.accent { color: var(--accent); border-color: var(--accent-lo); }
+
+  .result-response {
+    padding: 14px 16px;
+    font-family: 'Lato', sans-serif;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .result-context {
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ctx-block { font-size: 11px; }
+  .ctx-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+  .ctx-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-2);
+    background: var(--bg);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+  }
+
+  /* ── EMPTY STATE ──────────────────────────────────────────── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    color: var(--text-3);
+    padding: 40px;
+    text-align: center;
+  }
+  .empty-icon {
+    font-size: 40px;
+    margin-bottom: 6px;
+    filter: grayscale(1) opacity(0.4);
+  }
+  .empty-state h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--text-2);
+    font-weight: 400;
+  }
+  .empty-state p {
+    font-size: 12px;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  /* ── TIPS PANEL ───────────────────────────────────────────── */
+  .tips-panel {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tips-toggle {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tips-content { margin-top: 10px; display: none; }
+  .tips-content.open { display: block; }
+  .tip-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .tip-list li {
+    font-size: 11px;
+    color: var(--text-2);
+    padding-left: 12px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .tip-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 9px;
+    top: 2px;
+  }
+
+  /* ── LOADING OVERLAY ──────────────────────────────────────── */
+  .loading-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(14,13,11,0.6);
+    backdrop-filter: blur(2px);
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    pointer-events: none;
+  }
+  .loading-overlay.show { display: flex; pointer-events: all; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: var(--text-2);
+    font-size: 14px;
+  }
+
+  .panel-right { position: relative; }
+
+  /* ── COMPARE MODE ─────────────────────────────────────────── */
+  .compare-toggle-row {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .toggle-switch {
+    position: relative;
+    width: 34px;
+    height: 18px;
+    cursor: pointer;
+  }
+  .toggle-switch input { display: none; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 9px;
+    transition: background 0.2s;
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    background: var(--text-3);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-track { background: var(--accent-lo); }
+  .toggle-switch input:checked ~ .toggle-thumb { left: 18px; background: var(--accent); }
+  .toggle-lbl { font-size: 11px; color: var(--text-2); }
+
+  /* ── COMPARE PANEL B ──────────────────────────────────────── */
+  #compare-b-panel {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  #compare-b-panel.open { display: block; }
+  #compare-b-panel textarea { min-height: 60px; font-size: 11px; }
+  .compare-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .compare-label.a { color: var(--info); }
+  .compare-label.b { color: #a07ad4; }
+
+  .results-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .split-col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .split-col:last-child { border-right: none; }
+  .split-head {
+    padding: 8px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .split-head.a { color: var(--info); background: rgba(106,160,200,0.05); }
+  .split-head.b { color: #a07ad4; background: rgba(160,122,212,0.05); }
+  .split-body { flex: 1; overflow-y: auto; padding: 14px; }
+  .split-body::-webkit-scrollbar { width: 3px; }
+  .split-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* ── TOKEN COUNTER ────────────────────────────────────────── */
+  .token-estimate {
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">PL</div>
+  <h1>Prompt<span>Lab</span></h1>
+  <div class="header-sub">
+    Bead Exchange Dataset · Co-DETECT Workshop<br>
+    <span style="color:var(--text-3)">IEG Mainz, March 2026</span>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <!-- ═══════════════════════ LEFT PANEL ═══════════════════════ -->
+  <div class="panel-left">
+
+    <!-- Connection Config -->
+    <div class="section-head">
+      <span class="label">Connection</span>
+    </div>
+    <div class="conn-panel">
+      <div class="conn-tabs">
+        <button class="conn-tab active" onclick="setConnMode('hf')" id="tab-hf">HuggingFace</button>
+        <button class="conn-tab" onclick="setConnMode('lms')" id="tab-lms">LM Studio</button>
+      </div>
+
+      <!-- HuggingFace fields -->
+      <div id="hf-fields" class="conn-fields">
+        <div class="field-row">
+          <div class="field-label">API Token</div>
+          <input type="password" id="hf-token" placeholder="hf_xxxxxxxxxxxxxxxx" autocomplete="off">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Model</div>
+          <select id="hf-model">
+            <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral-7B-Instruct-v0.3</option>
+            <option value="HuggingFaceH4/zephyr-7b-beta">Zephyr-7B-beta</option>
+            <option value="meta-llama/Llama-3.2-3B-Instruct">Llama-3.2-3B-Instruct</option>
+            <option value="google/gemma-2-2b-it">Gemma-2-2B-IT</option>
+            <option value="Qwen/Qwen2.5-7B-Instruct">Qwen2.5-7B-Instruct</option>
+            <option value="custom">Custom model ID…</option>
+          </select>
+        </div>
+        <div class="field-row" id="hf-custom-row" style="display:none">
+          <div class="field-label">Custom Model ID</div>
+          <input type="text" id="hf-custom" placeholder="org/model-name">
+        </div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:4px;">
+          Uses HuggingFace Inference API · free tier available at
+          <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--accent)">huggingface.co/settings/tokens</a>
+        </div>
+      </div>
+
+      <!-- LM Studio fields -->
+      <div id="lms-fields" class="conn-fields" style="display:none">
+        <div class="field-row">
+          <div class="field-label">Base URL</div>
+          <input type="text" id="lms-url" value="http://localhost:1234" placeholder="http://localhost:1234">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Model name (optional)</div>
+          <input type="text" id="lms-model" placeholder="local-model (auto-detected)">
+        </div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:4px;">
+          LM Studio must be running with Server enabled (default port 1234). OpenAI-compatible API.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips-panel">
+      <div class="tips-toggle" onclick="toggleTips()">
+        <span id="tips-arrow">▸</span> Workshop tips
+      </div>
+      <div class="tips-content" id="tips-content">
+        <ul class="tip-list">
+          <li>Use <code style="font-family:monospace;color:var(--accent-hi)">{observation}</code> in the user prompt to insert the selected text.</li>
+          <li>Try the preset prompts — compare <em>Descriptive</em> vs <em>Codebook</em> to see how structure changes outputs.</li>
+          <li>A precise <strong>system prompt</strong> defines the model's role; the <strong>user prompt</strong> gives the task.</li>
+          <li>Enable <em>Compare A/B</em> to run two different prompts side-by-side on the same observation.</li>
+          <li>Ask: does the model "over-code" vague passages? Does adding definitions help?</li>
+          <li>Look for <strong>hallucinations</strong>: details the model adds that aren't in the source text.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Preset selector -->
+    <div class="preset-row">
+      <span class="lbl">Preset</span>
+      <select id="preset-select" onchange="applyPreset()">
+        <option value="">— choose a preset prompt —</option>
+        <option value="descriptive">1. Descriptive (naive)</option>
+        <option value="extraction">2. Information extraction</option>
+        <option value="codebook">3. Co-DETECT codebook style</option>
+        <option value="json">4. Structured JSON output</option>
+        <option value="interpretive">5. Interpretive / argumentative</option>
+        <option value="fewshot">6. Few-shot with examples</option>
+      </select>
+    </div>
+
+    <div class="scrollable">
+
+      <!-- System Prompt -->
+      <div class="prompt-area">
+        <div class="prompt-head">
+          <span class="lbl">System Prompt</span>
+          <span class="hint">defines model role &amp; behaviour</span>
+        </div>
+        <textarea class="prompt-input system-input" id="system-prompt" rows="4"
+          placeholder="You are a helpful assistant.">You are an expert historian specialising in precolonial African trade and material culture. You apply careful, evidence-based reasoning and only make claims that are directly supported by the source text provided.</textarea>
+      </div>
+
+      <!-- User Prompt -->
+      <div class="prompt-area">
+        <div class="prompt-head">
+          <span class="lbl">User Prompt</span>
+          <span class="hint">
+            <span class="var-chip" onclick="insertVar()">&#123;observation&#125;</span>
+          </span>
+        </div>
+        <textarea class="prompt-input user-input" id="user-prompt" rows="6"
+          placeholder="Use {observation} to insert the selected text…">Analyse the following passage from a European traveller account of precolonial Africa.
+
+Passage:
+{observation}
+
+Describe what is happening in this passage and what it reveals about the context of the exchange.</textarea>
+      </div>
+
+      <!-- Compare B toggle -->
+      <div class="compare-toggle-row">
+        <label class="toggle-switch">
+          <input type="checkbox" id="compare-toggle" onchange="toggleCompare()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+        <span class="toggle-lbl">A/B Compare — test a second prompt simultaneously</span>
+      </div>
+
+      <!-- Compare B prompt -->
+      <div id="compare-b-panel">
+        <div class="compare-label a" style="margin-bottom:4px">PROMPT A (above)</div>
+        <div class="compare-label b">PROMPT B — Alternative user prompt</div>
+        <textarea id="user-prompt-b" rows="5"
+          placeholder="Alternative prompt using {observation}…">Using the passage below, complete the following coding task. For each field, provide ONLY the value; if uncertain, write "unclear".
+
+Passage:
+{observation}
+
+Fields to code:
+- Exchange type (trade / gift / tribute / unclear):
+- Bead colour(s) mentioned:
+- Who gives beads (European / African / unclear):
+- Who receives beads (European / African / unclear):
+- Quantity mentioned:
+- Purpose of exchange:</textarea>
+      </div>
+
+    </div><!-- /scrollable -->
+
+    <!-- Run bar -->
+    <div class="run-bar">
+      <button class="btn-run" id="btn-run" onclick="runPrompt()">▶ Run</button>
+      <button class="btn-clear" onclick="clearResults()">Clear</button>
+      <div class="run-info">
+        <span id="token-est" class="token-estimate"></span>
+      </div>
+    </div>
+
+  </div><!-- /panel-left -->
+
+
+  <!-- ═══════════════════════ RIGHT PANEL ══════════════════════ -->
+  <div class="panel-right">
+
+    <!-- Observation selector header -->
+    <div class="results-header">
+      <span class="status-dot" id="status-dot"></span>
+      <span class="lbl">Observations</span>
+      <div class="results-meta" id="results-meta"></div>
+    </div>
+
+    <!-- Obs list + results split view -->
+    <div style="display:flex;flex:1;overflow:hidden;">
+
+      <!-- Observation list -->
+      <div style="width:220px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;">
+        <div class="section-head"><span class="label">Select Observation</span></div>
+        <div class="obs-list" id="obs-list"></div>
+      </div>
+
+      <!-- Results area -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+        <!-- Selected obs display -->
+        <div class="obs-display" id="obs-display" style="display:none">
+          <div class="obs-full-text" id="obs-text-display"></div>
+          <div class="obs-source-line">
+            Source: <span id="obs-source-display"></span>
+            &nbsp;·&nbsp; Region: <span id="obs-region-display"></span>
+            &nbsp;·&nbsp; c. <span id="obs-date-display"></span>
+          </div>
+        </div>
+
+        <!-- Results output -->
+        <div id="results-normal" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+          <div class="results-body" id="results-body">
+            <div class="empty-state">
+              <div class="empty-icon">🪬</div>
+              <h3>No results yet</h3>
+              <p>Select an observation, configure your prompts, and press <strong style="color:var(--accent)">Run</strong> to see how the model responds.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compare split view (hidden by default) -->
+        <div id="results-compare" style="display:none;flex:1;overflow:hidden;" class="results-split">
+          <div class="split-col">
+            <div class="split-head a">▶ Prompt A</div>
+            <div class="split-body" id="split-a"></div>
+          </div>
+          <div class="split-col">
+            <div class="split-head b">▶ Prompt B</div>
+            <div class="split-body" id="split-b"></div>
+          </div>
+        </div>
+
+      </div><!-- /results area -->
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-msg" id="loading-msg">Querying model…</div>
+    </div>
+
+  </div><!-- /panel-right -->
+</div><!-- /workspace -->
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const OBSERVATIONS = [
+  {
+    id: 1,
+    source: "Livingstone, Missionary Travels",
+    region: "South-Central Africa",
+    date: "1856",
+    text: "The chief Sekeletu received us with great ceremony, and we presented him with three fathoms of blue calico and two strings of white trade beads. He appeared pleased with the gift and ordered his wives to prepare food for our party, directing that we should want for nothing during our stay in his territory."
+  },
+  {
+    id: 2,
+    source: "Burton, The Lake Regions of Central Africa",
+    region: "East Africa (Tabora region)",
+    date: "1858",
+    text: "At the market of Kazeh, I observed transactions of considerable complexity: Arab merchants exchanging large quantities of cloth and Venetian glass beads for ivory, copper wire, and provisions. The merikani cloth and the red sami-sami beads were the currencies most universally accepted, though the rates fluctuated considerably according to the season and the distance from the coast."
+  },
+  {
+    id: 3,
+    source: "Speke, Journal of the Discovery of the Source of the Nile",
+    region: "Great Lakes, East Africa",
+    date: "1863",
+    text: "The women descended to the riverbank carrying parcels of millet, dried fish, and plantains. For these provisions they demanded payment strictly in beads, and would accept no substitute. The red and yellow varieties they wore in great quantities about their necks and wrists commanded the highest value; a handful of such beads would procure sufficient food for two days' march."
+  },
+  {
+    id: 4,
+    source: "Cameron, Across Africa",
+    region: "Central Africa",
+    date: "1875",
+    text: "We found that ivory could only be obtained at very considerable expense, the traders requiring no fewer than twenty pounds' weight of sami-sami beads for a single tusk of moderate size. These beads, of Venetian manufacture — though the traders themselves were entirely ignorant of their origin — had penetrated far inland along established Arab trading routes, replacing older forms of exchange in many districts."
+  },
+  {
+    id: 5,
+    source: "Thomson, To the Central African Lakes",
+    region: "East Africa",
+    date: "1881",
+    text: "An old woman approached our camp alone and unafraid. She wore about her neck no fewer than thirty separate strings of beads, ranging from small seed beads of white and pale blue to large agate beads of considerable age which she told us had come from the coast. When I offered to purchase one string in exchange for a length of cloth, she refused indignantly, explaining that the beads had been given by her mother and were not articles of trade. They were, she insisted, part of her history."
+  },
+  {
+    id: 6,
+    source: "Serpa Pinto, How I Crossed Africa",
+    region: "Southern Africa",
+    date: "1877",
+    text: "Entrance into the territory of the paramount chief required the payment of a substantial hongo, or tribute. Our party was obliged to surrender two bales of cloth, a quantity of brass wire, and an entire box containing some five thousand small glass beads of various colours — the white, blue, and red varieties being most prized. This payment made, we received in return safe passage and a guarantee of trade within his domain, the chief sending word through his indunas that his people would bring provisions and cattle to our camp."
+  }
+];
+
+// ─── PRESETS ─────────────────────────────────────────────────────────────────
+
+const PRESETS = {
+  descriptive: {
+    system: `You are a helpful assistant with broad knowledge of history.`,
+    user: `Read the following passage and describe in a few sentences what is happening.
+
+Passage:
+{observation}`
+  },
+  extraction: {
+    system: `You are a careful research assistant. Extract only information that is explicitly stated in the source text. Do not infer or add information beyond what is written.`,
+    user: `From the passage below, extract the following information. If a piece of information is not mentioned, write "not stated".
+
+Passage:
+{observation}
+
+Extract:
+- Who is giving objects:
+- Who is receiving objects:
+- Objects exchanged:
+- Purpose of the exchange:
+- Location (if mentioned):
+- Quantities (if mentioned):`
+  },
+  codebook: {
+    system: `You are an expert coder applying a standardised codebook for historical bead exchange data. Your task is to code observations from European traveller accounts of precolonial Africa (1500–1900). Apply codes strictly according to the definitions provided. When in doubt, code as "unclear" rather than guessing.`,
+    user: `Apply the following codebook to this passage from a traveller account.
+
+PASSAGE:
+{observation}
+
+CODEBOOK DEFINITIONS:
+- EXCHANGE_TYPE: The nature of the transaction. Options: trade (goods exchanged for goods/beads), gift (given without stated expectation of return), tribute/hongo (payment for safe passage or access), unclear.
+- BEAD_DIRECTION: Who is giving the beads. Options: European_gives, African_gives, unclear.
+- BEAD_COLOR: Any colour explicitly mentioned (list all). Write "none mentioned" if absent.
+- BEAD_MATERIAL: Any material explicitly mentioned (glass, agate, coral, shell, etc.). Write "none mentioned" if absent.
+- QUANTITY_EXPLICIT: Is a specific quantity of beads stated? yes / no.
+- AFRICAN_AGENCY: Does the passage show Africans exercising choice or control in the exchange? yes / no / unclear.
+
+Provide your codes and a one-sentence justification for each.`
+  },
+  json: {
+    system: `You are a data extraction assistant. You must respond ONLY with valid JSON. Do not add any explanation, preamble, or markdown. Return only the JSON object.`,
+    user: `Extract structured data from this historical passage and return it as a JSON object with these exact keys: exchange_type, bead_direction, bead_colors (array), bead_material, quantity_mentioned (boolean), african_agency (yes/no/unclear), notes (brief string).
+
+Passage:
+{observation}`
+  },
+  interpretive: {
+    system: `You are an expert in African economic history. You write analytically and argue from evidence. Your interpretations challenge colonial narratives of "primitive barter" and recognise the sophistication of precolonial African exchange systems.`,
+    user: `Consider the following passage from a European traveller account of precolonial Africa.
+
+Passage:
+{observation}
+
+In 2–3 paragraphs, argue what this passage reveals about the economic sophistication and agency of African actors in precolonial exchange networks. What does it challenge about colonial-era assumptions? What limitations does the European source perspective impose on our reading?`
+  },
+  fewshot: {
+    system: `You are an expert coder applying a historical bead exchange codebook. Below are two coded examples to guide your output format, followed by the passage to code.`,
+    user: `EXAMPLE 1:
+Passage: "We gave the chief a string of blue beads and a piece of red cloth in exchange for permission to pass through his lands."
+Code: EXCHANGE_TYPE=tribute | BEAD_DIRECTION=European_gives | BEAD_COLOR=blue | QUANTITY_EXPLICIT=no | AFRICAN_AGENCY=yes (chief controls access)
+
+EXAMPLE 2:
+Passage: "The woman offered us a basket of grain and demanded three strings of white beads in return. We paid the price she asked without bargaining."
+Code: EXCHANGE_TYPE=trade | BEAD_DIRECTION=European_gives | BEAD_COLOR=white | QUANTITY_EXPLICIT=yes (three strings) | AFRICAN_AGENCY=yes (woman sets price)
+
+---
+Now code the following passage using the same format:
+
+{observation}`
+  }
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+
+let selectedObs = null;
+let connMode = 'hf';
+let runCount = 0;
+let compareMode = false;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+function init() {
+  renderObsList();
+  selectObs(0);
+  updateTokenEstimate();
+
+  document.getElementById('system-prompt').addEventListener('input', updateTokenEstimate);
+  document.getElementById('user-prompt').addEventListener('input', updateTokenEstimate);
+  document.getElementById('hf-model').addEventListener('change', () => {
+    const v = document.getElementById('hf-model').value;
+    document.getElementById('hf-custom-row').style.display = v === 'custom' ? 'flex' : 'none';
+  });
+}
+
+function renderObsList() {
+  const container = document.getElementById('obs-list');
+  container.innerHTML = '';
+  OBSERVATIONS.forEach((obs, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'obs-item';
+    btn.id = `obs-item-${i}`;
+    btn.onclick = () => selectObs(i);
+    btn.innerHTML = `
+      <span class="obs-num">OBS ${obs.id}</span>
+      <span class="obs-preview">${obs.text.substring(0, 55)}…</span>
+      <span class="obs-meta">${obs.region} · c.${obs.date}</span>
+    `;
+    container.appendChild(btn);
+  });
+}
+
+function selectObs(index) {
+  document.querySelectorAll('.obs-item').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById(`obs-item-${index}`);
+  if (btn) btn.classList.add('active');
+  selectedObs = OBSERVATIONS[index];
+
+  // Update display
+  const disp = document.getElementById('obs-display');
+  disp.style.display = 'block';
+  document.getElementById('obs-text-display').textContent = `"${selectedObs.text}"`;
+  document.getElementById('obs-source-display').textContent = selectedObs.source;
+  document.getElementById('obs-region-display').textContent = selectedObs.region;
+  document.getElementById('obs-date-display').textContent = selectedObs.date;
+
+  updateTokenEstimate();
+}
+
+// ─── PRESET LOADER ────────────────────────────────────────────────────────────
+
+function applyPreset() {
+  const key = document.getElementById('preset-select').value;
+  if (!key || !PRESETS[key]) return;
+  const p = PRESETS[key];
+  document.getElementById('system-prompt').value = p.system;
+  document.getElementById('user-prompt').value = p.user;
+  updateTokenEstimate();
+}
+
+// ─── TOKEN ESTIMATE ───────────────────────────────────────────────────────────
+
+function roughTokens(text) {
+  return Math.ceil(text.split(/\s+/).length * 1.35);
+}
+
+function updateTokenEstimate() {
+  const sys = document.getElementById('system-prompt').value;
+  const usr = document.getElementById('user-prompt').value;
+  const obs = selectedObs ? selectedObs.text : '';
+  const fullUser = usr.replace('{observation}', obs);
+  const total = roughTokens(sys) + roughTokens(fullUser);
+  document.getElementById('token-est').textContent = `~${total} input tokens`;
+}
+
+// ─── CONN MODE ────────────────────────────────────────────────────────────────
+
+function setConnMode(mode) {
+  connMode = mode;
+  document.getElementById('tab-hf').classList.toggle('active', mode === 'hf');
+  document.getElementById('tab-lms').classList.toggle('active', mode === 'lms');
+  document.getElementById('hf-fields').style.display = mode === 'hf' ? 'flex' : 'none';
+  document.getElementById('lms-fields').style.display = mode === 'lms' ? 'flex' : 'none';
+}
+
+// ─── COMPARE TOGGLE ───────────────────────────────────────────────────────────
+
+function toggleCompare() {
+  compareMode = document.getElementById('compare-toggle').checked;
+  document.getElementById('compare-b-panel').classList.toggle('open', compareMode);
+  document.getElementById('results-normal').style.display = compareMode ? 'none' : 'flex';
+  document.getElementById('results-compare').style.display = compareMode ? 'flex' : 'none';
+}
+
+// ─── VAR INSERT ───────────────────────────────────────────────────────────────
+
+function insertVar() {
+  const ta = document.getElementById('user-prompt');
+  const pos = ta.selectionStart;
+  const before = ta.value.substring(0, pos);
+  const after = ta.value.substring(pos);
+  ta.value = before + '{observation}' + after;
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = pos + '{observation}'.length;
+  updateTokenEstimate();
+}
+
+// ─── TIPS TOGGLE ─────────────────────────────────────────────────────────────
+
+function toggleTips() {
+  const el = document.getElementById('tips-content');
+  const arrow = document.getElementById('tips-arrow');
+  el.classList.toggle('open');
+  arrow.textContent = el.classList.contains('open') ? '▾' : '▸';
+}
+
+// ─── CLEAR RESULTS ───────────────────────────────────────────────────────────
+
+function clearResults() {
+  runCount = 0;
+  document.getElementById('results-body').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">🪬</div>
+      <h3>No results yet</h3>
+      <p>Select an observation, configure your prompts, and press <strong style="color:var(--accent)">Run</strong> to see how the model responds.</p>
+    </div>`;
+  document.getElementById('split-a').innerHTML = '';
+  document.getElementById('split-b').innerHTML = '';
+  setStatus('idle');
+  document.getElementById('results-meta').innerHTML = '';
+}
+
+// ─── STATUS ──────────────────────────────────────────────────────────────────
+
+function setStatus(state) {
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot ' + (state === 'ok' ? 'ok' : state === 'err' ? 'err' : state === 'loading' ? 'loading' : '');
+}
+
+// ─── API CALL ─────────────────────────────────────────────────────────────────
+
+async function callAPI(systemPrompt, userPrompt) {
+  const messages = [
+    { role: 'user', content: userPrompt }
+  ];
+  if (systemPrompt && systemPrompt.trim()) {
+    messages.unshift({ role: 'system', content: systemPrompt });
+  }
+
+  if (connMode === 'hf') {
+    const token = document.getElementById('hf-token').value.trim();
+    if (!token) throw new Error('Please enter a HuggingFace API token.');
+    const modelSel = document.getElementById('hf-model').value;
+    const model = modelSel === 'custom'
+      ? document.getElementById('hf-custom').value.trim()
+      : modelSel;
+    if (!model) throw new Error('Please enter a model ID.');
+
+    const url = `https://api-inference.huggingface.co/models/${model}/v1/chat/completions`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        max_tokens: 800,
+        temperature: 0.3
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`HuggingFace API error ${resp.status}: ${err.substring(0, 200)}`);
+    }
+    const data = await resp.json();
+    if (data.choices && data.choices[0]) {
+      return data.choices[0].message.content;
+    }
+    if (data.error) throw new Error(data.error);
+    throw new Error('Unexpected response format: ' + JSON.stringify(data).substring(0, 200));
+
+  } else {
+    // LM Studio — OpenAI-compatible
+    const baseUrl = (document.getElementById('lms-url').value.trim() || 'http://localhost:1234').replace(/\/$/, '');
+    const modelName = document.getElementById('lms-model').value.trim() || 'local-model';
+    const url = `${baseUrl}/v1/chat/completions`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelName,
+        messages: messages,
+        max_tokens: 800,
+        temperature: 0.3
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`LM Studio error ${resp.status}: ${err.substring(0, 200)}`);
+    }
+    const data = await resp.json();
+    if (data.choices && data.choices[0]) {
+      return data.choices[0].message.content;
+    }
+    throw new Error('Unexpected response: ' + JSON.stringify(data).substring(0, 200));
+  }
+}
+
+// ─── RUN ──────────────────────────────────────────────────────────────────────
+
+async function runPrompt() {
+  if (!selectedObs) { alert('Please select an observation first.'); return; }
+
+  const sysRaw  = document.getElementById('system-prompt').value;
+  const userRaw = document.getElementById('user-prompt').value;
+  const userB   = document.getElementById('user-prompt-b').value;
+
+  if (!userRaw.trim()) { alert('Please enter a user prompt.'); return; }
+
+  const obsText = selectedObs.text;
+  const userFinal  = userRaw.replace(/{observation}/g, obsText);
+  const userFinalB = compareMode ? userB.replace(/{observation}/g, obsText) : null;
+
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true;
+  setStatus('loading');
+  document.getElementById('loading-overlay').classList.add('show');
+  const messages = compareMode
+    ? ['Querying model A…', 'Querying model B…']
+    : ['Querying model…'];
+  document.getElementById('loading-msg').textContent = messages[0];
+
+  const t0 = Date.now();
+  runCount++;
+
+  try {
+    if (compareMode) {
+      // Run both in parallel
+      const [resA, resB] = await Promise.allSettled([
+        callAPI(sysRaw, userFinal),
+        callAPI(sysRaw, userFinalB)
+      ]);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+      const textA = resA.status === 'fulfilled' ? resA.value : `ERROR: ${resA.reason.message}`;
+      const textB = resB.status === 'fulfilled' ? resB.value : `ERROR: ${resB.reason.message}`;
+
+      renderCompare(textA, textB, sysRaw, userFinal, userFinalB, elapsed);
+      setStatus('ok');
+      document.getElementById('results-meta').innerHTML =
+        `<span><strong>${elapsed}s</strong></span>`;
+
+    } else {
+      const response = await callAPI(sysRaw, userFinal);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      renderResult(response, sysRaw, userFinal, elapsed);
+      setStatus('ok');
+      document.getElementById('results-meta').innerHTML =
+        `Run #${runCount} · <strong>${elapsed}s</strong>`;
+    }
+
+  } catch (err) {
+    setStatus('err');
+    renderError(err.message);
+    document.getElementById('results-meta').innerHTML =
+      `<span style="color:var(--err)">Error</span>`;
+  } finally {
+    btn.disabled = false;
+    document.getElementById('loading-overlay').classList.remove('show');
+  }
+}
+
+// ─── RENDER RESULT ────────────────────────────────────────────────────────────
+
+function renderResult(text, sys, user, elapsed) {
+  const body = document.getElementById('results-body');
+
+  // Remove empty state
+  const empty = body.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const card = document.createElement('div');
+  card.className = 'result-card';
+
+  const modelLabel = connMode === 'hf'
+    ? document.getElementById('hf-model').value.split('/').pop()
+    : (document.getElementById('lms-model').value || 'local-model');
+
+  card.innerHTML = `
+    <div class="result-card-head">
+      <span class="run-n">Run #${runCount}</span>
+      <span style="color:var(--text-3);font-size:11px">OBS ${selectedObs.id} · ${selectedObs.region}</span>
+      <div class="meta-pills">
+        <span class="pill accent">${modelLabel}</span>
+        <span class="pill">${elapsed}s</span>
+      </div>
+    </div>
+    <div class="result-response">${escapeHtml(text)}</div>
+    <div class="result-context">
+      <div class="ctx-block">
+        <div class="ctx-label">System prompt</div>
+        <div class="ctx-value" title="${escapeHtml(sys)}">${escapeHtml(sys.substring(0, 80))}${sys.length > 80 ? '…' : ''}</div>
+      </div>
+      <div class="ctx-block">
+        <div class="ctx-label">User prompt (first 80 chars)</div>
+        <div class="ctx-value" title="${escapeHtml(user)}">${escapeHtml(user.substring(0, 80))}${user.length > 80 ? '…' : ''}</div>
+      </div>
+    </div>
+  `;
+
+  body.prepend(card);
+  body.scrollTop = 0;
+}
+
+function renderCompare(textA, textB, sys, userA, userB, elapsed) {
+  const bodyA = document.getElementById('split-a');
+  const bodyB = document.getElementById('split-b');
+
+  const modelLabel = connMode === 'hf'
+    ? document.getElementById('hf-model').value.split('/').pop()
+    : (document.getElementById('lms-model').value || 'local-model');
+
+  const blockA = document.createElement('div');
+  blockA.className = 'result-card';
+  blockA.style.borderColor = 'var(--info)';
+  blockA.style.borderTopWidth = '2px';
+  blockA.innerHTML = `
+    <div class="result-card-head"><span class="run-n" style="color:var(--info)">OBS ${selectedObs.id}</span><span class="pill" style="margin-left:auto">${elapsed}s</span></div>
+    <div class="result-response">${escapeHtml(textA)}</div>
+  `;
+
+  const blockB = document.createElement('div');
+  blockB.className = 'result-card';
+  blockB.style.borderColor = '#a07ad4';
+  blockB.style.borderTopWidth = '2px';
+  blockB.innerHTML = `
+    <div class="result-card-head"><span class="run-n" style="color:#a07ad4">OBS ${selectedObs.id}</span><span class="pill" style="margin-left:auto">${elapsed}s</span></div>
+    <div class="result-response">${escapeHtml(textB)}</div>
+  `;
+
+  bodyA.innerHTML = '';
+  bodyB.innerHTML = '';
+  bodyA.appendChild(blockA);
+  bodyB.appendChild(blockB);
+}
+
+function renderError(msg) {
+  if (compareMode) {
+    ['split-a', 'split-b'].forEach(id => {
+      const el = document.getElementById(id);
+      el.innerHTML = `<div style="color:var(--err);font-size:12px;padding:10px;font-family:monospace">${escapeHtml(msg)}</div>`;
+    });
+  } else {
+    const body = document.getElementById('results-body');
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.borderColor = 'var(--err)';
+    card.innerHTML = `<div class="result-card-head"><span class="run-n" style="color:var(--err)">Error</span></div>
+      <div class="result-response" style="color:var(--err)">${escapeHtml(msg)}</div>`;
+    body.prepend(card);
+  }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
